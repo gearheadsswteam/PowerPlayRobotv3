@@ -55,7 +55,6 @@ public class Robot {
     public Servo wristR;
     public RevColorSensorV3 holder;
     public IMU gyro;
-    public Arm arm;
     public Claw claw;
     List<LynxModule> allHubs;
     PidfController liftPidf = new PidfController(liftKp, liftKi, liftKd) {

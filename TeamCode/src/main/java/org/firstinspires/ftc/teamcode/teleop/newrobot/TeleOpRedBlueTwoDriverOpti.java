@@ -20,10 +20,9 @@ import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.teamcode.classes.ValueStorage;
 
-@TeleOp(name = "TeleOpRedBlueTwoDriverOpti")
+@TeleOp(name = "TeleOpRedBlueTwoDriverOptiNewRobot")
 public class TeleOpRedBlueTwoDriverOpti extends LinearOpMode {
 
-    public static final double INTAKE_REVERSE_POWER = -0.75;
     Robot robot = new Robot();
     int state = 0;
     double initialHeading = ValueStorage.lastPose.getHeading() - side * PI / 2;
