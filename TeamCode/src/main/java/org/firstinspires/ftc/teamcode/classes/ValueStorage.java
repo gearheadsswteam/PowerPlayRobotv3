@@ -12,6 +12,13 @@ public class ValueStorage {
     public static double rollerRetract = 0.25;
     public static double gripperHold = 0.48;
     public static double gripperRelease = 0.43;
+
+
+
+    public static double [] armGrabPosition = {0.2,0.4};
+    public static double [] armDropPosition = {0.2,0.4};
+
+
     public static double armRest = 0.10;
     public static double armUp = 0.53;
     public static double armIn = 0.41;

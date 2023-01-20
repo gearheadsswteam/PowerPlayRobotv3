@@ -56,6 +56,7 @@ public class Robot {
     public RevColorSensorV3 holder;
     public IMU gyro;
     public Claw claw;
+    public Arm arm;
     List<LynxModule> allHubs;
     PidfController liftPidf = new PidfController(liftKp, liftKi, liftKd) {
         @Override
@@ -106,6 +107,7 @@ public class Robot {
                 RevHubOrientationOnRobot.UsbFacingDirection.FORWARD));
         gyro.initialize(parameters);
         claw = new Claw(this);
+        arm = new Arm(this);
     }
     public double getHeading() {
         return gyro.getRobotOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.RADIANS).firstAngle;

@@ -32,7 +32,7 @@ public class TeleOpRedBlueTwoDriverOpti extends LinearOpMode {
     double turn;
     double stateTime = 0;
     double time;
-    boolean stateDir = true;
+
     boolean aPressed = false;
     boolean bPressed = false;
     boolean aReleased = true;
@@ -68,14 +68,13 @@ public class TeleOpRedBlueTwoDriverOpti extends LinearOpMode {
                 case 0:
                     //Elevator Med + Arm Grab + Claw open
                     robot.extendLiftProfile(time, liftLowClose[0], 0);
-                    robot.extendArmProfile(time, liftLowClose[1], 0);
+                    robot.arm.moveToGrabPosition(time);
                     robot.claw.openClaw(time);
                     stateTime = robot.liftArmClawTime();
 
                     //Move to next state
                     if (rbPressed) {
                         state = 1;
-                        stateDir = true;
                     }
                     break;
 
@@ -107,7 +106,7 @@ public class TeleOpRedBlueTwoDriverOpti extends LinearOpMode {
                     if (time > stateTime) {
                         //Claw closes
                         robot.extendLiftProfile(time, liftMedClose[0], 0);
-                        robot.extendArmProfile(time, liftLowClose[1], 0); //Drop position
+                        robot.arm.moveToDropPosition(time);
                         stateTime = robot.liftArmTime();
                         state = 4;
                     } else {
@@ -129,7 +128,7 @@ public class TeleOpRedBlueTwoDriverOpti extends LinearOpMode {
                             state = 5;
                             robot.extendLiftProfile(time, liftLowClose[0], 0);
                             stateTime = robot.liftTime();
-                        } else if ("X".equals(elevatorButtonLatched)) {
+                        } else if ("x".equals(elevatorButtonLatched)) {
                             state = 5;
                             robot.extendLiftProfile(time, liftLowClose[0], 0);
                             stateTime = robot.liftTime();
@@ -144,6 +143,7 @@ public class TeleOpRedBlueTwoDriverOpti extends LinearOpMode {
                     if (time > stateTime) {
                         //Claw opens
                         if (rbPressed) {
+                            elevatorButtonLatched = null;
                             robot.claw.openClaw(time);
                             stateTime = robot.clawTime();
                             state = 6;
