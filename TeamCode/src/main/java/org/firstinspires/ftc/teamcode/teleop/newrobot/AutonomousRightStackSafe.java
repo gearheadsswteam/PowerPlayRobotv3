@@ -1,18 +1,10 @@
 package org.firstinspires.ftc.teamcode.teleop.newrobot;
 
-import static org.firstinspires.ftc.teamcode.classes.ValueStorage.armIn;
-import static org.firstinspires.ftc.teamcode.classes.ValueStorage.forwardArmProfile1;
 import static org.firstinspires.ftc.teamcode.classes.ValueStorage.forwardArmProfile2;
-import static org.firstinspires.ftc.teamcode.classes.ValueStorage.forwardWristProfile1;
 import static org.firstinspires.ftc.teamcode.classes.ValueStorage.forwardWristProfile2;
-import static org.firstinspires.ftc.teamcode.classes.ValueStorage.gripperHold;
-import static org.firstinspires.ftc.teamcode.classes.ValueStorage.holderDetectionThreshold;
 import static org.firstinspires.ftc.teamcode.classes.ValueStorage.liftLowClose;
 import static org.firstinspires.ftc.teamcode.classes.ValueStorage.liftMedClose;
-import static org.firstinspires.ftc.teamcode.classes.ValueStorage.rollerRetract;
-import static org.firstinspires.ftc.teamcode.classes.ValueStorage.rollerUp;
 import static org.firstinspires.ftc.teamcode.classes.ValueStorage.sides;
-import static org.firstinspires.ftc.teamcode.classes.ValueStorage.wristIn;
 import static java.lang.Math.PI;
 
 import com.acmerobotics.roadrunner.geometry.Pose2d;
@@ -20,7 +12,6 @@ import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.autonomous.AbstractAutonomous;
 import org.firstinspires.ftc.teamcode.drive.DriveConstants;
 import org.firstinspires.ftc.teamcode.drive.SampleMecanumDrive;
@@ -43,19 +34,17 @@ public class AutonomousRightStackSafe extends AbstractAutonomous {
     boolean endDropTraj = false;
     boolean dropTrajDone = false;
     boolean traj5Done = false;
-    boolean intakeTrajDone = false;
+    boolean atConeStackPosition = false;
     boolean parkCompleted = false;
     boolean coneAvailableForDrop = false;
 
-    boolean retractDone = true;
-    boolean usingSensor = false;
 
     int cycles = 0;
+    int state = 0;
 
     TrajectorySequence traj1; //From start to drop point
     TrajectorySequence traj2; //From drop to stack
     TrajectorySequence traj3; //From stack to drop
-    TrajectorySequence traj4; //From drop to stack
     TrajectorySequence[] traj5; //From drop to park
 
     @Override
@@ -75,6 +64,7 @@ public class AutonomousRightStackSafe extends AbstractAutonomous {
                 .addTemporalMarker(1, 0, () -> {
                             endDropTraj = true;
                             dropTrajDone = true;
+                            atConeStackPosition = false;
                             dropTrajTime = time;
                         }
                 )
@@ -91,12 +81,14 @@ public class AutonomousRightStackSafe extends AbstractAutonomous {
                     robot.claw.openClaw(time);
                 })
                 .addTemporalMarker(1, 0, () -> {
-                    intakeTrajDone = true;
+                    atConeStackPosition = true;
+                    endDropTraj = false;
+                    dropTrajDone = false;
                 })
                 .build();
 
         //Stack to the drop point
-        traj3 = robot.drive.trajectorySequenceBuilder(backPose)
+        traj3 = robot.drive.trajectorySequenceBuilder(stackPose)
                 .setVelConstraint(SampleMecanumDrive.getVelocityConstraint(10, DriveConstants.MAX_ANG_VEL, DriveConstants.TRACK_WIDTH))
                 .splineTo(dropPose.vec(), dropPose.getHeading())
                 .addTemporalMarker(1, -1, () -> {
@@ -106,6 +98,7 @@ public class AutonomousRightStackSafe extends AbstractAutonomous {
                 .addTemporalMarker(1, 0, () -> {
                     endDropTraj = true;
                     dropTrajDone = true;
+                    atConeStackPosition = false;
                     dropTrajTime = time;
                     cycles++;
                 })
@@ -167,17 +160,16 @@ public class AutonomousRightStackSafe extends AbstractAutonomous {
                 if (cycles < 3) {
                     robot.drive.followTrajectorySequenceAsync(traj2);
                     //At cone pick up point
-                    if(intakeTrajDone) {
-                        collectCone(1);
-                        coneAvailableForDrop = true;
-                        dropTrajDone = false;
+                    if(atConeStackPosition) {
+                        state = 1;
+                        collectCone();
                     }
                 } else {//go to park
                     if(!parkCompleted) {
                         robot.drive.followTrajectorySequenceAsync(traj5[runCase - 1]);
-                        retractDone = true;
-                        dropTrajDone = false;
                         parkCompleted = true;
+                        dropTrajDone = false;
+                        endDropTraj = false;
                     }
                 }
             }
@@ -185,20 +177,17 @@ public class AutonomousRightStackSafe extends AbstractAutonomous {
             //**
             // Cone is inside
             //Go to drop position
-            if (intakeTrajDone ) {//cone is inside
+            if (coneAvailableForDrop) {//cone is inside
                 robot.drive.followTrajectorySequenceAsync(traj3);
-                intakeTrajDone = false;
-                cycles++;
+                atConeStackPosition = false;
             }
 
 
             //You are at drop position
-
-            if (retractDone && time > retractTime) {
-                robot.armProfile = forwardArmProfile2(time);
-                robot.wristProfile = forwardWristProfile2(time);
-                doneTime = robot.armTime();
-                retractDone = false;
+            if (time - dropTrajTime > 0.5) {
+                robot.claw.openClaw(time);
+                robot.clawTime();
+                dropTrajDone = true;
             }
 
 
@@ -219,7 +208,7 @@ public class AutonomousRightStackSafe extends AbstractAutonomous {
 
     private double stateTime;
 
-    private void collectCone(int state) {
+    private void collectCone() {
         switch (state) {
             case 0:
                 //Elevator Med + Arm Grab + Claw open
@@ -229,7 +218,7 @@ public class AutonomousRightStackSafe extends AbstractAutonomous {
                 stateTime = robot.liftArmClawTime();
 
                 //Move to next state
-                if (rbPressed) {
+                if (time > stateTime) {
                     state = 1;
                 }
                 break;
@@ -264,10 +253,11 @@ public class AutonomousRightStackSafe extends AbstractAutonomous {
                     robot.extendLiftProfile(time, liftMedClose[0], 0);
                     robot.arm.moveToDropPosition(time);
                     stateTime = robot.liftArmTime();
-                    state = 4;
                 } else {
                     //waiting on state 3 to complete
                 }
+                coneAvailableForDrop = true;
+                dropTrajDone = true;
                 break;
 
         }
