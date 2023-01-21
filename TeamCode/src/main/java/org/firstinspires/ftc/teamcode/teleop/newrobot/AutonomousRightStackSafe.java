@@ -1,7 +1,5 @@
 package org.firstinspires.ftc.teamcode.teleop.newrobot;
 
-import static org.firstinspires.ftc.teamcode.classes.ValueStorage.forwardArmProfile2;
-import static org.firstinspires.ftc.teamcode.classes.ValueStorage.forwardWristProfile2;
 import static org.firstinspires.ftc.teamcode.classes.ValueStorage.liftLowClose;
 import static org.firstinspires.ftc.teamcode.classes.ValueStorage.liftMedClose;
 import static org.firstinspires.ftc.teamcode.classes.ValueStorage.sides;
@@ -17,30 +15,34 @@ import org.firstinspires.ftc.teamcode.drive.DriveConstants;
 import org.firstinspires.ftc.teamcode.drive.SampleMecanumDrive;
 import org.firstinspires.ftc.teamcode.trajectorysequence.TrajectorySequence;
 
-@Autonomous(name = "RightStackSafe", group = "Right")
+@Autonomous(name = "RightStackSafe", group = "NewRobot")
 public class AutonomousRightStackSafe extends AbstractAutonomous {
+
+    //Drop point position
     Pose2d dropPose = new Pose2d(-39, 15, 0.45);
+    //Park positions
     Pose2d[] parkPose = {new Pose2d(-11, 11, 0), new Pose2d(-35, 11, 0), new Pose2d(-59, 11, 0)};
+
+    //Cone Stack pick up position
     Pose2d stackPose = new Pose2d(-60, 11, 0);
-    Pose2d knockPose = new Pose2d(-50, 11, 0);
-    Pose2d backPose = new Pose2d(-54, 11, 0);
-    Pose2d intakePose = new Pose2d(-62, 11, 0);
+
     ElapsedTime clock = new ElapsedTime();
+
     double time = 0;
     double dropTrajTime = 1000;
     double retractTime = 1000;
     double doneTime = 1000;
 
-    boolean endDropTraj = false;
-    boolean dropTrajDone = false;
-    boolean traj5Done = false;
-    boolean atConeStackPosition = false;
-    boolean parkCompleted = false;
-    boolean coneAvailableForDrop = false;
+    boolean endDropTraj = false; // true if drop trajectory has completed
+    boolean dropTrajDone = false; // true if drop trajectory has completed
+    boolean traj5Done = false; //true if parking trajectory has completed
+    boolean atConeStackPosition = false; //True if robot at stack position
+    boolean parkCompleted = false; //True if parking is completed
+    boolean coneAvailableForDrop = false; // True of cone has been picked up from stack
 
 
-    int cycles = 0;
-    int state = 0;
+    int cycles = 0; //Number cone cycles completed
+    int state = 0; // state machine to pick up the cone
 
     TrajectorySequence traj1; //From start to drop point
     TrajectorySequence traj2; //From drop to stack
@@ -78,6 +80,7 @@ public class AutonomousRightStackSafe extends AbstractAutonomous {
                 .addDisplacementMarker(() -> {
                     //Med, grab position
                     robot.extendLiftProfile(time, liftMedClose[0], 0);
+                    robot.arm.moveToGrabPosition(time);
                     robot.claw.openClaw(time);
                 })
                 .addTemporalMarker(1, 0, () -> {
@@ -93,7 +96,6 @@ public class AutonomousRightStackSafe extends AbstractAutonomous {
                 .splineTo(dropPose.vec(), dropPose.getHeading())
                 .addTemporalMarker(1, -1, () -> {
                     robot.extendLiftProfile(time, liftMedClose[0], 0);
-                    //Arm in drop position
                 })
                 .addTemporalMarker(1, 0, () -> {
                     endDropTraj = true;
@@ -160,12 +162,12 @@ public class AutonomousRightStackSafe extends AbstractAutonomous {
                 if (cycles < 3) {
                     robot.drive.followTrajectorySequenceAsync(traj2);
                     //At cone pick up point
-                    if(atConeStackPosition) {
+                    if (atConeStackPosition) {
                         state = 1;
                         collectCone();
                     }
                 } else {//go to park
-                    if(!parkCompleted) {
+                    if (!parkCompleted) {
                         robot.drive.followTrajectorySequenceAsync(traj5[runCase - 1]);
                         parkCompleted = true;
                         dropTrajDone = false;
