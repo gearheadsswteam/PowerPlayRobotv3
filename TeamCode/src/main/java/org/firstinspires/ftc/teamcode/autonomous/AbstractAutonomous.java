@@ -4,12 +4,14 @@ import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
-import org.firstinspires.ftc.teamcode.classes.Robot;
+
 import org.firstinspires.ftc.teamcode.classes.SignalDetector;
+import org.firstinspires.ftc.teamcode.teleop.newrobot.Robot;
+
 public abstract class AbstractAutonomous extends LinearOpMode {
     public Robot robot = new Robot();
     SignalDetector detector;
-    int runCase = 2;
+    protected int runCase = 2;
     int caseDetected = 2;
     int caseDetectionLength = 0;
     ElapsedTime clock = new ElapsedTime();
