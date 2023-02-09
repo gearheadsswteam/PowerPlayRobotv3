@@ -15,7 +15,7 @@ import org.firstinspires.ftc.teamcode.drive.DriveConstants;
 import org.firstinspires.ftc.teamcode.drive.SampleMecanumDrive;
 import org.firstinspires.ftc.teamcode.trajectorysequence.TrajectorySequence;
 
-@Autonomous(name = "RightStackSafe", group = "NewRobot")
+@Autonomous(name = "RightStackSafeMarkII", group = "NewRobot")
 public class AutonomousRightStackSafe extends AbstractAutonomous {
 
     //Drop point position
